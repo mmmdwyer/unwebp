@@ -3,7 +3,7 @@
 import io   # for BytesIO
 import os   # for os.scandir
 import PIL.Image
-import PIL  # Pillow, Python Image Library. pythone3-pil
+import PIL  # Pillow, Python Image Library. python3-pil
 
 
 for entry in os.scandir('.'):
