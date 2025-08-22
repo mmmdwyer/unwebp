@@ -1,56 +1,55 @@
 #!/usr/bin/python3
 
-# python3-pil
-import PIL.Image
-import PIL  # Pillow, Python Image Library. pythone3-pil
 import io   # for BytesIO
 import os   # for os.scandir
+import PIL.Image
+import PIL  # Pillow, Python Image Library. pythone3-pil
 
 
 for entry in os.scandir('.'):
-	if entry.name.endswith('.webp') and entry.is_file():
-		# Open the image file
-		try:
-			image = PIL.Image.open(entry.name)
-		except:
-			print(f'Could not open file: {entry.name}')
-			continue
+    if entry.name.endswith('.webp') and entry.is_file():
+        # Open the image file
+        try:
+            image = PIL.Image.open(entry.name)
+        except Exception:
+            print(f'Could not open file: {entry.name}')
+            continue
 
-		print(f'-- Inspecting {image.filename}')
-		if image.format != "WEBP":
-			print(f'File is {image.format}, not a WEBP file: {image.filename}')
-			continue
-		# Collecting some assorted info
-		exif = image.getexif()
+        print(f'-- Inspecting {image.filename}')
+        if image.format != "WEBP":
+            print(f'File is {image.format}, not a WEBP file: {image.filename}')
+            continue
+        # Collecting some assorted info
+        exif = image.getexif()
 
-		# Set flags
-		force_png = False
+        # Set flags
+        forcepng = False
 
-		# Try out PNG encoding
-		pngversion = io.BytesIO()
-		with open(image.filename, "rb") as fp:
-			if fp.read(15)[-1:] == b"L":
-				# VP8L means lossless. Look for that L
-				print("*** Lossless detected. Forcing PNG.")
-				image.save(pngversion, 'PNG', save_all=True)
-				force_png = True
-		if image.n_frames > 1:
-			print("*** Animation detected. Forcing PNG.")
-			image.save(pngversion, 'PNG', save_all=True)
-			force_png = True
-		elif image.mode == 'RGBA':
-			print("*** Alpha channel detected. Forcing PNG.")
-			force_png = True
-			image.save(pngversion, 'PNG')
-			
-		# At this point, I think we've selected PNG for any images
-		# that have a hard requirement for it. What's left are 
-		# almost certainly supposed to be JPEGs.
-		if force_png:
-			outfilename = image.filename.removesuffix('.webp')+'.png'
-			with open(outfilename, 'wb') as fp:
-				fp.write(pngversion.getbuffer())
-		else:
-			outfilename = image.filename.removesuffix('.webp')+'.jpg'
-			image.save(outfilename, 'JPEG', exif=exif)
-		os.unlink(image.filename)
+        # Try out PNG encoding
+        pngversion = io.BytesIO()
+        with open(image.filename, "rb") as fp:
+            if fp.read(15)[-1:] == b"L":
+                # VP8L means lossless. Look for that L
+                print("*** Lossless detected. Forcing PNG.")
+                image.save(pngversion, 'PNG', save_all=True)
+                forcepng = True
+        if image.n_frames > 1:
+            print("*** Animation detected. Forcing PNG.")
+            image.save(pngversion, 'PNG', save_all=True)
+            forcepng = True
+        elif image.mode == 'RGBA':
+            print("*** Alpha channel detected. Forcing PNG.")
+            forcepng = True
+            image.save(pngversion, 'PNG')
+
+        # At this point, I think we've selected PNG for any images
+        # that have a hard requirement for it. What's left are
+        # almost certainly supposed to be JPEGs.
+        if forcepng:
+            outfilename = image.filename.removesuffix('.webp')+'.png'
+            with open(outfilename, 'wb') as fp:
+                fp.write(pngversion.getbuffer())
+        else:
+            outfilename = image.filename.removesuffix('.webp')+'.jpg'
+            image.save(outfilename, 'JPEG', exif=exif)
+        os.unlink(image.filename)
