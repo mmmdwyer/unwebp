@@ -7,7 +7,7 @@ import PIL  # Pillow, Python Image Library. python3-pil
 
 
 for entry in os.scandir('.'):
-    if entry.name.endswith('.webp') and entry.is_file():
+    if (entry.name.endswith('.webp') or entry.name.endswith('.avif')) and entry.is_file():
         # Open the image file
         try:
             image = PIL.Image.open(entry.name)
@@ -16,8 +16,8 @@ for entry in os.scandir('.'):
             continue
 
         print(f'-- Inspecting {image.filename}')
-        if image.format != "WEBP":
-            print(f'File is {image.format}, not a WEBP file: {image.filename}')
+        if image.format != "WEBP" and image.format != 'AVIF':
+            print(f'File is {image.format}, not a WEBP or AVIF file: {image.filename}')
             continue
         # Collecting some assorted info
         exif = image.getexif()
@@ -27,12 +27,15 @@ for entry in os.scandir('.'):
 
         # Try out PNG encoding
         pngversion = io.BytesIO()
-        with open(image.filename, "rb") as fp:
-            if fp.read(15)[-1:] == b"L":
-                # VP8L means lossless. Look for that L
-                print("*** Lossless detected. Forcing PNG.")
-                image.save(pngversion, 'PNG', save_all=True)
-                forcepng = True
+        # I'm not sure if AVIF has a lossless mode. There does exist
+        # image.codec of aom, rav1e and svt, but that's not read in.
+        if image.format == "WEBP":
+            with open(image.filename, "rb") as fp:
+                if fp.read(15)[-1:] == b"L":
+                    # VP8L means lossless. Look for that L
+                    print("*** Lossless PNG detected. Forcing PNG.")
+                    image.save(pngversion, 'PNG', save_all=True)
+                    forcepng = True
         if image.n_frames > 1:
             print("*** Animation detected. Forcing PNG.")
             image.save(pngversion, 'PNG', save_all=True)
